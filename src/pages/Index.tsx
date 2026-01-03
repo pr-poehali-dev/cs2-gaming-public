@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,15 +9,44 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
+import { authService, type User } from '@/lib/auth';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('home');
   const [chatMessage, setChatMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [chatMessages, setChatMessages] = useState([
     { id: 1, user: 'ProGamer', message: 'Кто в dm?', time: '12:34' },
     { id: 2, user: 'SnipeKing', message: 'Я, го 1х1', time: '12:35' },
     { id: 3, user: 'CS2Legend', message: 'Сервер Mirage онлайн!', time: '12:36' },
   ]);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const params = new URLSearchParams(window.location.search);
+    
+    if (params.get('auth_callback') === 'true') {
+      const user = await authService.handleCallback(params);
+      if (user) {
+        setCurrentUser(user);
+        window.history.replaceState({}, '', '/');
+        navigate('/profile');
+      }
+    } else {
+      const user = await authService.verify();
+      if (user) {
+        setCurrentUser(user);
+      }
+    }
+  };
+
+  const handleSteamLogin = async () => {
+    await authService.login();
+  };
 
   const servers = [
     { id: 1, name: 'DUST 2 - ONLY', map: 'de_dust2', online: 24, slots: 32, ping: 12 },
@@ -348,16 +378,31 @@ const Index = () => {
 
             <Card className="p-4 neon-border">
               <h3 className="font-bold mb-4">Быстрый вход</h3>
-              <div className="space-y-2">
-                <Button className="w-full" variant="outline">
-                  <Icon name="LogIn" className="mr-2" />
-                  Steam
-                </Button>
-                <Button className="w-full" variant="outline">
-                  <Icon name="User" className="mr-2" />
-                  Регистрация
-                </Button>
-              </div>
+              {currentUser ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-primary">
+                      <AvatarImage src={currentUser.avatar_url} />
+                      <AvatarFallback>{currentUser.username[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-bold">{currentUser.username}</div>
+                      <div className="text-xs text-muted-foreground">Игрок</div>
+                    </div>
+                  </div>
+                  <Button className="w-full" onClick={() => navigate('/profile')}>
+                    <Icon name="User" className="mr-2" />
+                    Профиль
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Button className="w-full" variant="outline" onClick={handleSteamLogin}>
+                    <Icon name="LogIn" className="mr-2" />
+                    Войти через Steam
+                  </Button>
+                </div>
+              )}
             </Card>
           </div>
         </div>

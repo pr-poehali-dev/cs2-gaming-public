@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Get Steam login redirect URL",
+      "method": "GET",
+      "path": "/",
+      "queryParams": {
+        "return_url": "https://test.com"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "redirect_url": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Verify session returns 401 without token",
+      "method": "GET",
+      "path": "/",
+      "queryParams": {
+        "action": "verify"
+      },
+      "expectedStatus": 401,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
